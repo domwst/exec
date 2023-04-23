@@ -1,0 +1,14 @@
+{
+  "worker-threads": 2,
+  "path-to-tools": "/var/worker/tools",
+  "consumer-config": {
+    "stream-name": "tasks",
+    "name": "workers",
+    "ack-wait-time": "60s"
+  },
+  "connection-config": {
+    "user": "$WORKER_USER",
+    "password": "$WORKER_PASSWORD",
+    "nats-url": "$NATS_URL"
+  }
+}
