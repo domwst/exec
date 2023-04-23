@@ -1,7 +1,7 @@
 package tools
 
 import (
-	"os"
+	"log"
 )
 
 func HandlePanic(err error) {
@@ -11,10 +11,9 @@ func HandlePanic(err error) {
 	panic(err)
 }
 
-func HandleErrLog(err error) {
+func HandleErrLog(err error, logger *log.Logger) {
 	if err == nil {
 		return
 	}
-	_, err = Fprintfln(os.Stderr, "Error encountered: %v", err)
-	HandlePanic(err)
+	logger.Printf("Error encountered: %v\n", err)
 }

@@ -1,4 +1,4 @@
-package common
+package cmd
 
 // TODO: Move on from json to HOCON
 
