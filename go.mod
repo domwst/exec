@@ -3,7 +3,7 @@ module exec
 go 1.20
 
 require (
-	github.com/google/uuid v1.3.0
+	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/hashicorp/go-envparse v0.1.0
 	github.com/nats-io/nats.go v1.25.0
 )

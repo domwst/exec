@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"exec/cmd"
 	"exec/tools"
 	"flag"
@@ -9,7 +11,9 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"os/exec"
 	"strconv"
+	"time"
 )
 
 func getUniqueName() string {
@@ -23,52 +27,51 @@ func worker(
 	kvb nats.KeyValue,
 	logger *log.Logger,
 ) {
-	// TODO
-	//var errorCount = 0
-	//for {
-	//	msgRaw, err := sub.Fetch(1)
-	//	if err != nil {
-	//		logger.Printf("Error occurred: %+v\n", err)
-	//		errorCount++
-	//		if errorCount == 10 {
-	//			logger.Fatalf("10 errors in a row, there must be something wrong\n")
-	//		}
-	//		continue
-	//	}
-	//	if len(msgRaw) != 1 {
-	//		logger.Fatalf("Expected batch of size 1 but got %d\n", len(msgRaw))
-	//	}
-	//	logger.Printf("Received message: %s\n", err)
-	//	var msg cmd.TaskMsg
-	//	err = json.Unmarshal(msgRaw[0].Data, &msg)
-	//	tools.HandlePanic(err)
-	//
-	//	baseName := getUniqueName()
-	//	inputName := "/tmp/" + baseName + ".cpp"
-	//	outputName := "/tmp/" + baseName
-	//	err = sosb.GetFile(msg.ObjectStoreKey, inputName)
-	//	if err != nil {
-	//		logger.Printf("Error retrieving the %s object: %+v\n", msg.ObjectStoreKey, err)
-	//	}
-	//
-	//	subProc := exec.Command("g++", inputName, "-o", outputName, "-std=c++2a", "-Wall")
-	//
-	//	stderr := new(bytes.Buffer)
-	//	subProc.Stderr = stderr
-	//	tools.HandleErrLog(subProc.Start(), logger)
-	//
-	//	var status string
-	//	select {
-	//	case <-time.After(5 * time.Second):
-	//		status = "Time limit exceeded"
-	//		subProc.Process.Kill()
-	//		//case subProc.CombinedOutput()
-	//	}
-	//
-	//	tools.HandleErrLog(os.Remove(inputName), logger)
-	//	tools.HandleErrLog(os.Remove(outputName), logger)
-	//
-	//}
+	var errorCount = 0
+	for {
+		msgRaw, err := sub.Fetch(1)
+		if err != nil {
+			logger.Printf("Error occurred: %+v\n", err)
+			errorCount++
+			if errorCount == 10 {
+				logger.Fatalf("10 errors in a row, there must be something wrong\n")
+			}
+			continue
+		}
+		if len(msgRaw) != 1 {
+			logger.Fatalf("Expected batch of size 1 but got %d\n", len(msgRaw))
+		}
+		logger.Printf("Received message: %s\n", err)
+		var msg cmd.TaskMsg
+		err = json.Unmarshal(msgRaw[0].Data, &msg)
+		tools.HandlePanic(err)
+
+		baseName := getUniqueName()
+		inputName := "/tmp/" + baseName + ".cpp"
+		outputName := "/tmp/" + baseName
+		err = sosb.GetFile(msg.ObjectStoreKey, inputName)
+		if err != nil {
+			logger.Printf("Error retrieving the %s object: %+v\n", msg.ObjectStoreKey, err)
+		}
+
+		subProc := exec.Command("g++", inputName, "-o", outputName, "-std=c++2a", "-Wall")
+
+		stderr := new(bytes.Buffer)
+		subProc.Stderr = stderr
+		tools.HandleErrLog(subProc.Start(), logger)
+		var state *os.ProcessState
+		select {
+		case <-time.After(5 * time.Second):
+			status = "Time limit exceeded"
+			tools.HandleErrLog(subProc.Process.Kill(), logger)
+			state, err = subProc.Process.Wait()
+			tools.HandleErrLog(err, logger)
+		}
+
+		tools.HandleErrLog(os.Remove(inputName), logger)
+		tools.HandleErrLog(os.Remove(outputName), logger)
+
+	}
 }
 
 func main() {

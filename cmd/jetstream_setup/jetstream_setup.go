@@ -33,7 +33,7 @@ func main() {
 	tools.HandlePanic(err)
 
 	consumerConfig := workerConfig.ConsumerConfig
-	_, err = SetStream(
+	_, err = cmd.SetStream(
 		js,
 		&nats.StreamConfig{
 			Name:      consumerConfig.StreamName,
@@ -43,7 +43,7 @@ func main() {
 	)
 	tools.HandlePanic(err)
 
-	_, err = SetConsumer(
+	_, err = cmd.SetConsumer(
 		js,
 		consumerConfig.StreamName,
 		&nats.ConsumerConfig{
@@ -55,21 +55,13 @@ func main() {
 	)
 	tools.HandlePanic(err)
 
-	sourceBucket := workerConfig.SourceObjectStoreBucketConfig
-	_, err = CreateOrGetObjectStoreBucket(
+	sourceBucket := workerConfig.ObjectStoreBucketConfig
+	_, err = cmd.CreateOrGetObjectStoreBucket(
 		js,
 		&nats.ObjectStoreConfig{
 			Bucket:      sourceBucket.Name,
 			Description: sourceBucket.Description,
-		})
-	tools.HandlePanic(err)
-
-	resultBucket := workerConfig.ResultObjectStoreBucketConfig
-	_, err = CreateOrGetObjectStoreBucket(
-		js,
-		&nats.ObjectStoreConfig{
-			Bucket:      resultBucket.Name,
-			Description: resultBucket.Description,
+			Replicas:    sourceBucket.Replicas,
 		})
 	tools.HandlePanic(err)
 }
