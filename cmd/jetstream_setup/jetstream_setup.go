@@ -2,7 +2,7 @@ package main
 
 import (
 	"exec/cmd"
-	"exec/tools"
+	"exec/common"
 	"flag"
 	"github.com/nats-io/nats.go"
 	"os"
@@ -16,21 +16,21 @@ func main() {
 	flag.Parse()
 
 	if *help {
-		tools.Printfln("Usage: %s", os.Args[0])
+		common.Printfln("Usage: %s", os.Args[0])
 		flag.PrintDefaults()
 		return
 	}
 
 	env := cmd.GetEnv(*dotEnvPath)
 	var workerConfig cmd.WorkerConfig
-	tools.HandlePanic(cmd.ParseConfigFileWithRespectToEnv(*configPath, env, &workerConfig))
+	common.HandlePanic(cmd.ParseConfigFileWithRespectToEnv(*configPath, env, &workerConfig))
 
 	nc, err := workerConfig.ConnectionConfig.Connect()
-	tools.HandlePanic(err)
+	common.HandlePanic(err)
 	defer nc.Close()
 
 	js, err := nc.JetStream()
-	tools.HandlePanic(err)
+	common.HandlePanic(err)
 
 	consumerConfig := workerConfig.ConsumerConfig
 	_, err = cmd.SetStream(
@@ -41,7 +41,7 @@ func main() {
 			Retention: nats.WorkQueuePolicy,
 		},
 	)
-	tools.HandlePanic(err)
+	common.HandlePanic(err)
 
 	_, err = cmd.SetConsumer(
 		js,
@@ -53,7 +53,7 @@ func main() {
 			AckWait:   consumerConfig.AckWaitTime.Duration,
 		},
 	)
-	tools.HandlePanic(err)
+	common.HandlePanic(err)
 
 	sourceBucket := workerConfig.ObjectStoreBucketConfig
 	_, err = cmd.CreateOrGetObjectStoreBucket(
@@ -63,5 +63,5 @@ func main() {
 			Description: sourceBucket.Description,
 			Replicas:    sourceBucket.Replicas,
 		})
-	tools.HandlePanic(err)
+	common.HandlePanic(err)
 }

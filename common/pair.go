@@ -1,4 +1,4 @@
-package tools
+package common
 
 type Pair[T any, U any] struct {
 	First  T `json:"first,omitempty"`

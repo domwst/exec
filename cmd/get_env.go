@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"errors"
-	"exec/tools"
+	"exec/common"
 	"github.com/hashicorp/go-envparse"
 	"os"
 )
@@ -20,7 +20,7 @@ func loadDotEnv(dotEnvPath string) (map[string]string, error) {
 
 func GetEnv(dotEnvPath string) map[string]string {
 	base, err := loadDotEnv(dotEnvPath)
-	tools.HandlePanic(err)
+	common.HandlePanic(err)
 	for k, v := range ParseEnvironment(os.Environ()) {
 		base[k] = v
 	}

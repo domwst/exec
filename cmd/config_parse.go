@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
-	"exec/tools"
+	"exec/common"
 	"io"
 	"os"
 	"reflect"
@@ -42,7 +42,7 @@ func ParseConfigFileWithRespectToEnv(filename string, env map[string]string, con
 		return err
 	}
 	defer func() {
-		tools.HandlePanic(file.Close())
+		common.HandlePanic(file.Close())
 	}()
 	bytes, err := io.ReadAll(file)
 	if err != nil {
