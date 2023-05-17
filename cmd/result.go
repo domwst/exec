@@ -11,7 +11,7 @@ type RunStatus uint8
 const (
 	Enqueued RunStatus = iota
 	Processing
-	Processed
+	Finished
 )
 
 type RunResult struct {

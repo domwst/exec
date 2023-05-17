@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/nats-io/nats.go"
+	"io"
 	"os"
 	"time"
 )
@@ -75,17 +76,13 @@ func RobustGetObjectFile(osb nats.ObjectStore, id string, filePath string, opts 
 	)
 }
 
-func RobustPutObjectFile(obs nats.ObjectStore, filePath string, objectName string, opts ...nats.ObjectOpt) (*nats.ObjectInfo, error) {
-	var objectInfo *nats.ObjectInfo
-	return objectInfo, retryOnError(
+func RobustGetObjectBytes(osb nats.ObjectStore, id string, opts ...nats.GetObjectOpt) ([]byte, error) {
+	var data []byte
+	return data, retryOnError(
 		func() error {
-			file, err := os.Open(filePath)
-			if err != nil {
-				return err
-			}
-			oi, err := obs.Put(&nats.ObjectMeta{Name: objectName}, file, opts...)
+			d, err := osb.GetBytes(id, opts...)
 			if err == nil {
-				objectInfo = oi
+				data = d
 			}
 			return err
 		},
@@ -93,8 +90,35 @@ func RobustPutObjectFile(obs nats.ObjectStore, filePath string, objectName strin
 	)
 }
 
-func RobustPubObjectFileRandomName(obs nats.ObjectStore, filePath string, opts ...nats.ObjectOpt) (*nats.ObjectInfo, error) {
-	return RobustPutObjectFile(obs, filePath, GetRandomId(), opts...)
+func RobustPutObject(osb nats.ObjectStore, object io.Reader, objectName string, opts ...nats.ObjectOpt) (*nats.ObjectInfo, error) {
+	var objectInfo *nats.ObjectInfo
+	return objectInfo, retryOnError(
+		func() error {
+			oi, err := osb.Put(&nats.ObjectMeta{Name: objectName}, object, opts...)
+			if err == nil {
+				objectInfo = oi
+			}
+			return err
+		},
+		[]error{nats.ErrTimeout},
+	)
+
+}
+
+func RobustPutObjectFile(osb nats.ObjectStore, filePath string, objectName string, opts ...nats.ObjectOpt) (*nats.ObjectInfo, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	return RobustPutObject(osb, file, objectName, opts...)
+}
+
+func RobustPubObjectFileRandomName(osb nats.ObjectStore, filePath string, opts ...nats.ObjectOpt) (*nats.ObjectInfo, error) {
+	return RobustPutObjectFile(osb, filePath, GetRandomId(), opts...)
+}
+
+func RobustPutObjectRandomName(osb nats.ObjectStore, object io.Reader, opts ...nats.ObjectOpt) (*nats.ObjectInfo, error) {
+	return RobustPutObject(osb, object, GetRandomId(), opts...)
 }
 
 func RobustGetKVEntry(kvb nats.KeyValue, key string) (nats.KeyValueEntry, error) {

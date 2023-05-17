@@ -5,27 +5,35 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-func CAS(kvb nats.KeyValue, key string, stopPredicate func([]byte) bool, alterRule func([]byte) ([]byte, error)) ([]byte, uint64, error) {
+func CAS[T any](
+	kvb nats.KeyValue,
+	key string,
+	stopPredicate func(*T) (bool, error),
+	alter func(*T) error,
+) (*T, uint64, error) {
 	for {
-		entry, err := RobustGetKVEntry(kvb, key)
+		entry, err := TypedRobustGetKVEntry[T](kvb, key)
 		if err != nil {
 			return nil, 0, err
 		}
-		if stopPredicate(entry.Value()) {
-			return entry.Value(), entry.Revision(), err
+		content := entry.Content
+		if b, err := stopPredicate(content); err != nil {
+			return nil, 0, err
+		} else if b {
+			return content, entry.Revision(), nil
 		}
 
-		newValue, err := alterRule(entry.Value())
+		err = alter(content)
 		if err != nil {
 			return nil, 0, err
 		}
-		rev, err := RobustUpdateKVEntry(kvb, key, entry.Revision(), newValue)
+		rev, err := TypedRobustUpdateKVEntry(kvb, key, entry.Revision(), content)
 		if errors.Is(err, nats.ErrKeyExists) {
 			continue
 		}
 		if err != nil {
 			return nil, 0, err
 		}
-		return newValue, rev, nil
+		return content, rev, nil
 	}
 }
