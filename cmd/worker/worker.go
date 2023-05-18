@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 )
 
 func worker(
@@ -23,11 +24,17 @@ func worker(
 ) {
 	var errorCount = 0
 	for {
-		var fileCleanup common.Cleanup
+		var cleanup common.Cleanup
 		{
-			msgs, err := sub.Fetch(1, context.Background())
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+			cleanup.AddAction(func() { cancel() })
+			msgs, err := sub.Fetch(1, ctx)
 			if err != nil {
-				logger.Printf("Error occurred: %+v\n", err)
+				if errors.Is(err, context.DeadlineExceeded) {
+					logger.Printf("It's too boring")
+					goto cleanup
+				}
+				common.HandleErrLog(err, logger)
 				errorCount++
 				if errorCount == 10 {
 					logger.Fatalf("10 errors in a row, there must be something wrong\n")
@@ -54,7 +61,7 @@ func worker(
 				logger.Printf("Failed to download input files: \"%+v\"", err)
 				goto cleanup
 			}
-			fileCleanup.AddAction(func() {
+			cleanup.AddAction(func() {
 				for i, name := range inputFiles {
 					err := os.Remove(name)
 					if err == nil {
@@ -68,7 +75,7 @@ func worker(
 				}
 			})
 			outputFiles := createTmpFileNames(content.OutputFileExtensions)
-			fileCleanup.AddAction(func() {
+			cleanup.AddAction(func() {
 				for i, name := range outputFiles {
 					err := os.Remove(name)
 					if err == nil || errors.Is(err, os.ErrNotExist) {
@@ -111,6 +118,6 @@ func worker(
 		}
 
 	cleanup:
-		fileCleanup.Do()
+		cleanup.Do()
 	}
 }
