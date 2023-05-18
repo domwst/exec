@@ -57,7 +57,7 @@ func SetConsumer(js nats.JetStreamManager, stream string, config *nats.ConsumerC
 
 func CreateOrGetObjectStoreBucket(osm nats.ObjectStoreManager, config *nats.ObjectStoreConfig) (nats.ObjectStore, error) {
 	os, err := osm.ObjectStore(config.Bucket)
-	if err != nil && !errors.Is(err, nats.ErrBucketNotFound) && !errors.Is(err, nats.ErrStreamNotFound) {
+	if err != nil && !errors.Is(err, nats.ErrBucketNotFound) && err.Error() != nats.ErrStreamNotFound.Error() {
 		return nil, err
 	}
 	if os == nil && err == nil {
