@@ -4,11 +4,22 @@
   "consumer-config": {
     "stream-name": "tasks",
     "name": "workers",
-    "ack-wait-time": "60s"
+    "ack-wait-time": "15s",
+    "replicas": 1
   },
   "connection-config": {
     "user": "$WORKER_USER",
     "password": "$WORKER_PASSWORD",
-    "nats-url": "$NATS_URL"
+    "nats-urls": "$NATS_URLS"
+  },
+  "object-store-bucket-config": {
+    "name": "artifacts",
+    "description": "Bucket for artifacts",
+    "replicas": 1
+  },
+  "key-value-bucket-config": {
+    "name": "db",
+    "description": "Essentially DB for exec",
+    "replicas": 1
   }
 }

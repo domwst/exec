@@ -33,12 +33,14 @@ func main() {
 	common.HandlePanic(err)
 
 	consumerConfig := workerConfig.ConsumerConfig
+
 	_, err = cmd.SetStream(
 		js,
 		&nats.StreamConfig{
 			Name:      consumerConfig.StreamName,
 			Subjects:  []string{consumerConfig.StreamName, consumerConfig.StreamName + ".>"},
 			Retention: nats.WorkQueuePolicy,
+			Replicas:  consumerConfig.Replicas,
 		},
 	)
 	common.HandlePanic(err)
@@ -51,17 +53,28 @@ func main() {
 			Durable:   consumerConfig.Name,
 			AckPolicy: nats.AckExplicitPolicy,
 			AckWait:   consumerConfig.AckWaitTime.Duration,
+			Replicas:  consumerConfig.Replicas,
 		},
 	)
 	common.HandlePanic(err)
 
-	sourceBucket := workerConfig.ObjectStoreBucketConfig
+	osBucketConfig := workerConfig.ObjectStoreBucketConfig
 	_, err = cmd.CreateOrGetObjectStoreBucket(
 		js,
 		&nats.ObjectStoreConfig{
-			Bucket:      sourceBucket.Name,
-			Description: sourceBucket.Description,
-			Replicas:    sourceBucket.Replicas,
+			Bucket:      osBucketConfig.Name,
+			Description: osBucketConfig.Description,
+			Replicas:    osBucketConfig.Replicas,
 		})
 	common.HandlePanic(err)
+
+	kvBucketConfig := workerConfig.KeyValueBucketConfig
+	_, err = cmd.CreateOrGetKeyValueStoreBucket(
+		js,
+		&nats.KeyValueConfig{
+			Bucket:      kvBucketConfig.Name,
+			Description: kvBucketConfig.Description,
+			Replicas:    kvBucketConfig.Replicas,
+		},
+	)
 }

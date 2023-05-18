@@ -1,6 +1,7 @@
 package cmd
 
 type KeyValueBucketConfig struct {
-	Name        string
-	Description string
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Replicas    int    `json:"replicas"`
 }
