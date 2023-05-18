@@ -2,6 +2,7 @@ package common
 
 import (
 	"log"
+	"runtime/debug"
 )
 
 func HandlePanic(err error) {
@@ -15,5 +16,5 @@ func HandleErrLog(err error, logger *log.Logger) {
 	if err == nil {
 		return
 	}
-	logger.Printf("Error encountered: %v\n", err)
+	logger.Printf("Encountered error %v\nAt %s", err, debug.Stack())
 }
