@@ -1,8 +1,9 @@
-package common
+package nats
 
 import (
 	"context"
 	"errors"
+	"exec/common"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/nats-io/nats.go"
 	"io"
@@ -38,7 +39,7 @@ func retryOnError(action func() error, errorList []error) error {
 	)
 }
 
-func RobustPublishSync(js nats.JetStreamContext, subj string, data []byte, opts ...nats.PubOpt) (*nats.PubAck, error) {
+func RobustPublishSync(js nats.JetStream, subj string, data []byte, opts ...nats.PubOpt) (*nats.PubAck, error) {
 	var ack *nats.PubAck = nil
 	err := retryOnError(
 		func() error {
@@ -114,11 +115,11 @@ func RobustPutObjectFile(osb nats.ObjectStore, filePath string, objectName strin
 }
 
 func RobustPubObjectFileRandomName(osb nats.ObjectStore, filePath string, opts ...nats.ObjectOpt) (*nats.ObjectInfo, error) {
-	return RobustPutObjectFile(osb, filePath, GetRandomId(), opts...)
+	return RobustPutObjectFile(osb, filePath, common.GetRandomId(), opts...)
 }
 
 func RobustPutObjectRandomName(osb nats.ObjectStore, object io.Reader, opts ...nats.ObjectOpt) (*nats.ObjectInfo, error) {
-	return RobustPutObject(osb, object, GetRandomId(), opts...)
+	return RobustPutObject(osb, object, common.GetRandomId(), opts...)
 }
 
 func RobustGetKVEntry(kvb nats.KeyValue, key string) (nats.KeyValueEntry, error) {
