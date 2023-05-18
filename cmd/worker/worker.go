@@ -98,7 +98,7 @@ func worker(
 
 			common.HandleErrLog(subProc.Start(), logger)
 			err = subProc.Wait()
-			{
+			if err != nil {
 				var exitError *exec.ExitError
 				if errors.As(err, &exitError) {
 					logger.Printf("Tool exited with non-zero code %d", exitError.ExitCode())
