@@ -10,8 +10,6 @@ import (
 
 func main() {
 	configPath := flag.String("config-file", "worker-config.json", "Path to the worker config file")
-	dotEnvPath := flag.String("env-file", ".env", "Path to .env-like file, \"-\" "+
-		"or non-existing file for none")
 	help := flag.Bool("help", false, "Print help")
 	flag.Parse()
 
@@ -21,7 +19,7 @@ func main() {
 		return
 	}
 
-	env := cmd.GetEnv(*dotEnvPath)
+	env := cmd.ParseEnvironment(os.Environ())
 	var workerConfig cmd.WorkerConfig
 	common.HandlePanic(cmd.ParseConfigFileWithRespectToEnv(*configPath, env, &workerConfig))
 
