@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1
+	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-envparse v0.1.0
 	github.com/nats-io/nats.go v1.25.0
 )

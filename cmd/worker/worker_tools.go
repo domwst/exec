@@ -82,6 +82,7 @@ func uploadResultsAndNotify(
 	var wg common.WorkGroup
 	for i, name := range outputFiles {
 		i := i
+		name := name
 		wg.Spawn(func() {
 			var idToWrite string
 			id, err := nats2.RobustPubObjectFileRandomName(osb, name)
