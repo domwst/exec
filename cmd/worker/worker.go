@@ -57,6 +57,12 @@ func worker(
 			}() // I don't care if it'll be finished after the processing of the request as long as I perform CAS inside
 
 			inputFiles, err := fetchFiles(osb, content.InputFiles, logger)
+			{
+				var e *ErrObjectNotFound
+				if errors.As(err, &e) {
+
+				}
+			}
 			if err != nil {
 				logger.Printf("Failed to download input files: \"%+v\"", err)
 				goto cleanup
@@ -96,7 +102,14 @@ func worker(
 
 			subProc.Env = content.CreateEnv()
 
-			common.HandleErrLog(subProc.Start(), logger)
+			{
+				err := subProc.Start()
+				if err != nil {
+					common.HandleErrLog(err, logger)
+					common.HandleErrLog(msg.NAck(), logger)
+					goto cleanup
+				}
+			}
 			err = subProc.Wait()
 			if err != nil {
 				var exitError *exec.ExitError

@@ -25,10 +25,10 @@ type connection struct {
 	logger       *log.Logger
 }
 
-func (c *connection) submit(file io.Reader) (string, error) {
+func (c *connection) submit(file io.Reader) (string, string, error) {
 	oi, err := nats2.RobustPutObject(c.osb, file, common.GetRandomId())
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	id := common.GetRandomId()
@@ -36,7 +36,7 @@ func (c *connection) submit(file io.Reader) (string, error) {
 		Status: cmd.Enqueued,
 	})
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	task := cmd.TaskMsg{
@@ -52,9 +52,9 @@ func (c *connection) submit(file io.Reader) (string, error) {
 	}
 	err = c.publisher.PublishSync(c.tasksSubject, &task)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return id, nil
+	return id, oi.Name, nil
 }
 
 func createErrResponse(errMsg string) []byte {
@@ -103,18 +103,20 @@ func (c *connection) handleSubmit(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	id, err := c.submit(&buf)
+	id, srcId, err := c.submit(&buf)
 	if err != nil {
 		c.returnErrorStr(resp, http.StatusInternalServerError, "Failed to submit: "+err.Error())
 		return
 	}
 
 	type Ok struct {
-		Id string `json:"id"`
+		Id    string `json:"id"`
+		SrcId string `json:"src-id"`
 	}
 	resp.WriteHeader(http.StatusOK)
 	data, err := json.Marshal(&Ok{
-		Id: id,
+		Id:    id,
+		SrcId: srcId,
 	})
 	common.HandleErrLog(err, c.logger)
 	_, err = resp.Write(data)

@@ -14,6 +14,14 @@ import (
 
 const tmpPath = "/tmp"
 
+type ErrObjectNotFound struct {
+	ObjectId string
+}
+
+func (e *ErrObjectNotFound) Error() string {
+	return "object not found: " + e.ObjectId
+}
+
 // TODO: Parallelize
 func fetchFiles(osb nats.ObjectStore, inputFiles []cmd.InputFile, logger *log.Logger) ([]string, error) {
 	var cleanup common.Cleanup
@@ -24,6 +32,9 @@ func fetchFiles(osb nats.ObjectStore, inputFiles []cmd.InputFile, logger *log.Lo
 		id, ext := fileInfo.ObjectStoreId, fileInfo.Extension
 		fileName := filepath.Join(tmpPath, common.GetRandomId()+ext)
 		err := nats2.RobustGetObjectFile(osb, id, fileName)
+		if errors.Is(err, nats.ErrObjectNotFound) {
+			return nil, &ErrObjectNotFound{ObjectId: id}
+		}
 		if err != nil {
 			return nil, err
 		}
