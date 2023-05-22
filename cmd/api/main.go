@@ -76,6 +76,9 @@ func (c *connection) returnErrorStr(
 	status int,
 	errMsg string,
 ) {
+	if status == http.StatusInternalServerError {
+		c.logger.Printf("Error: %s", errMsg)
+	}
 	resp.WriteHeader(status)
 	_, err := resp.Write(createErrResponse(errMsg))
 	common.HandleErrLog(err, c.logger)
@@ -123,18 +126,6 @@ func (c *connection) handleSubmit(resp http.ResponseWriter, req *http.Request) {
 	common.HandleErrLog(err, c.logger)
 }
 
-func toString(s cmd.RunStatus) string {
-	switch s {
-	case cmd.Enqueued:
-		return "enqueued"
-	case cmd.Processing:
-		return "processing"
-	case cmd.Finished:
-		return "finished"
-	}
-	return ""
-}
-
 func (c *connection) getStatus(id string) (cmd.RunStatus, *cmd.ToolResult, error) {
 	status, err := c.resultKvb.Get(id)
 	if err != nil {
@@ -171,13 +162,15 @@ func (c *connection) handleGetStatus(resp http.ResponseWriter, req *http.Request
 		Status   string `json:"status"`
 		BinaryId string `json:"binary-id,omitempty"`
 		ErrLogId string `json:"error-log-id,omitempty"`
+		Stats    string `json:"stats"`
 	}
 	res := Result{
-		Status: toString(status),
+		Status: status.ToString(),
 	}
 	if result != nil {
 		res.BinaryId = result.OutputFiles[0]
 		res.ErrLogId = result.OutputFiles[1]
+		res.Stats = result.ToolOutput
 	}
 
 	resp.WriteHeader(http.StatusOK)

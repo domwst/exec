@@ -14,6 +14,18 @@ const (
 	Finished
 )
 
+func (s RunStatus) ToString() string {
+	switch s {
+	case Enqueued:
+		return "enqueued"
+	case Processing:
+		return "processing"
+	case Finished:
+		return "finished"
+	}
+	return ""
+}
+
 type RunResult struct {
 	Status       RunStatus `json:"status"`
 	ToolResultId string    `json:"result-id"`
